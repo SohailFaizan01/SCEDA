@@ -1,0 +1,12 @@
+**target/
+**/*.rs.bk
+__pycache__/
+*.py[cod]
+venv/
+.env
+*.log
+.DS_Store
+Thumbs.db
+*.raw
+*.gds
+*.vcd

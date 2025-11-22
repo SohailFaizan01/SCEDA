@@ -1,0 +1,45 @@
+[package]
+name = "eda-platform-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Web framework
+actix-web = "4"
+actix-rt = "2"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Encryption
+aes-gcm = "0.10"
+argon2 = "0.5"
+rand = "0.8"
+
+# Logging
+env_logger = "0.11"
+log = "0.4"
+
+# TLS
+rustls = "0.21"
+rustls-pemfile = "1.0"
+
+# Storage
+async-trait = "0.1"
+rust-s3 = "0.33"
+base64 = "0.21"
+
+[profile.release]
+opt-level = 3
+lto = true

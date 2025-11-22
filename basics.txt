@@ -1,0 +1,33 @@
+# In the backend terminal
+Ctrl+C          # Stop server
+cargo run       # Start again (compiles + runs)
+# Install cargo-watch (once)
+cargo install cargo-watch
+
+# Run with auto-reload
+cd ~/structured_eda/backend
+cargo watch -x run
+
+
+
+
+# They're fine to leave running
+docker ps
+
+# Stop them when done for the day (optional)
+docker compose down
+
+# Start again tomorrow
+docker compose up -d
+
+
+# Terminal 1 - Backend
+cd ~/structured_eda/backend
+source .env
+cargo run
+
+# Terminal 2 - Frontend
+cd ~/structured_eda/frontend
+source venv/bin/activate
+pip install -r requirements.txt
+python client.py
