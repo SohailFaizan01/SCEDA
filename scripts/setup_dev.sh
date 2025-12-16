@@ -27,7 +27,7 @@ cd ..
 # Start database
 if command -v docker >/dev/null 2>&1; then
     echo " Starting PostgreSQL..."
-    docker-compose up -d postgres
+    docker compose up -d postgres
     sleep 5  # Wait for postgres to start
     
     echo " Running migrations..."

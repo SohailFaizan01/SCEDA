@@ -1,17 +1,18 @@
 -- File: backend/migrations/001_initial_schema.sql
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     last_login TIMESTAMPTZ
 );
 
 -- Projects table
-CREATE TABLE projects (
+CREATE TABLE IF NOT EXISTS projects (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     owner UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -20,7 +21,7 @@ CREATE TABLE projects (
 );
 
 -- IDEF0 Blocks (nested hierarchy)
-CREATE TABLE idef_blocks (
+CREATE TABLE IF NOT EXISTS idef_blocks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
     parent_block_id UUID REFERENCES idef_blocks(id) ON DELETE CASCADE,
@@ -39,7 +40,7 @@ CREATE TABLE idef_blocks (
 );
 
 -- Circuit views (schematic inside IDEF block)
-CREATE TABLE circuit_views (
+CREATE TABLE IF NOT EXISTS circuit_views (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     idef_block_id UUID REFERENCES idef_blocks(id) ON DELETE CASCADE,
     
@@ -56,7 +57,7 @@ CREATE TABLE circuit_views (
 );
 
 -- Components (for granular locking)
-CREATE TABLE components (
+CREATE TABLE IF NOT EXISTS components (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     circuit_view_id UUID REFERENCES circuit_views(id) ON DELETE CASCADE,
     component_type VARCHAR(50) NOT NULL, -- 'resistor', 'capacitor', etc.
@@ -77,7 +78,7 @@ CREATE TABLE components (
 );
 
 -- Connections/Nets
-CREATE TABLE nets (
+CREATE TABLE IF NOT EXISTS nets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     circuit_view_id UUID REFERENCES circuit_views(id) ON DELETE CASCADE,
     name VARCHAR(255),
@@ -89,7 +90,7 @@ CREATE TABLE nets (
 );
 
 -- Simulation results metadata (actual data in MinIO/filesystem)
-CREATE TABLE simulation_runs (
+CREATE TABLE IF NOT EXISTS simulation_runs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     circuit_view_id UUID REFERENCES circuit_views(id) ON DELETE CASCADE,
     
@@ -104,12 +105,12 @@ CREATE TABLE simulation_runs (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_idef_blocks_project ON idef_blocks(project_id);
-CREATE INDEX idx_idef_blocks_parent ON idef_blocks(parent_block_id);
-CREATE INDEX idx_circuit_views_block ON circuit_views(idef_block_id);
-CREATE INDEX idx_components_circuit ON components(circuit_view_id);
-CREATE INDEX idx_components_locked ON components(locked_by, lock_expires);
-CREATE INDEX idx_nets_circuit ON nets(circuit_view_id);
+CREATE INDEX IF NOT EXISTS idx_idef_blocks_project ON idef_blocks(project_id);
+CREATE INDEX IF NOT EXISTS idx_idef_blocks_parent ON idef_blocks(parent_block_id);
+CREATE INDEX IF NOT EXISTS idx_circuit_views_block ON circuit_views(idef_block_id);
+CREATE INDEX IF NOT EXISTS idx_components_circuit ON components(circuit_view_id);
+CREATE INDEX IF NOT EXISTS idx_components_locked ON components(locked_by, lock_expires);
+CREATE INDEX IF NOT EXISTS idx_nets_circuit ON nets(circuit_view_id);
 
 -- Function to auto-update updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -121,11 +122,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers
+DROP TRIGGER IF EXISTS update_projects_updated_at ON projects;
 CREATE TRIGGER update_projects_updated_at
     BEFORE UPDATE ON projects
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_circuit_views_updated_at ON circuit_views;
 CREATE TRIGGER update_circuit_views_updated_at
     BEFORE UPDATE ON circuit_views
     FOR EACH ROW
